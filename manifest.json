@@ -1,10 +1,10 @@
 {
-  "name": "나만의 한 줄 메모장",
-  "short_name": "한줄메모",
+  "name": "나의 한 줄 메모장임",
+  "short_name": "하고 싶은 말",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#4CAF50",
+  "theme_color": "##FF5733",
   "icons": [
     {
       "src": "icon-192.png",
