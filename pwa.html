@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>[수업 자료] GAS + GitHub Pages로 PWA 만들기</title>
+  <script>
+    // 테마 초기 적용 (저장된 선택 > 컴퓨터 설정 > 다크)
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('pwaGuideTheme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') {
+        t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+      }
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+  <style>
+    body {
+      font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
+    }
+    .slide {
+      display: none;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    .slide.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    pre {
+      font-family: 'Courier New', Courier, monospace;
+    }
+      button:disabled { opacity: 0.35; cursor: default; }
+
+    /* ===== 라이트 모드 (data-theme="light") : 기본 다크 디자인 위에 색상만 덮어씁니다 ===== */
+    html[data-theme="light"] { color-scheme: light; }
+    html[data-theme="light"] body { background: #eef2f7; color: #0f172a; }
+    /* 배경 */
+    html[data-theme="light"] .bg-slate-800 { background-color: #ffffff; }
+    html[data-theme="light"] .bg-slate-800\/50,
+    html[data-theme="light"] .bg-slate-800\/60,
+    html[data-theme="light"] .bg-slate-800\/70 { background-color: #f8fafc; }
+    html[data-theme="light"] .bg-slate-800\/80 { background-color: rgba(255,255,255,0.88); }
+    html[data-theme="light"] .bg-slate-900 { background-color: #f1f5f9; }
+    html[data-theme="light"] .bg-slate-900\/50,
+    html[data-theme="light"] .bg-slate-900\/60,
+    html[data-theme="light"] .bg-slate-900\/70,
+    html[data-theme="light"] .bg-slate-900\/80,
+    html[data-theme="light"] .bg-slate-900\/90 { background-color: #f1f5f9; }
+    html[data-theme="light"] .bg-slate-700 { background-color: #e2e8f0; }
+    html[data-theme="light"] .hover\:bg-slate-700:hover,
+    html[data-theme="light"] .hover\:bg-slate-600:hover { background-color: #cbd5e1; }
+    html[data-theme="light"] code.bg-slate-800,
+    html[data-theme="light"] kbd.bg-slate-800,
+    html[data-theme="light"] code.bg-slate-900 { background-color: #e2e8f0; }
+    /* 테두리 */
+    html[data-theme="light"] .border-slate-700,
+    html[data-theme="light"] .border-slate-700\/60,
+    html[data-theme="light"] .border-slate-700\/70,
+    html[data-theme="light"] .border-slate-700\/80 { border-color: #cbd5e1; }
+    html[data-theme="light"] .border-slate-600 { border-color: #94a3b8; }
+    /* 글자 */
+    html[data-theme="light"] .text-white { color: #0f172a; }
+    html[data-theme="light"] .text-slate-100 { color: #0f172a; }
+    html[data-theme="light"] .text-slate-200 { color: #1e293b; }
+    html[data-theme="light"] .text-slate-300 { color: #334155; }
+    html[data-theme="light"] .text-slate-400 { color: #475569; }
+    html[data-theme="light"] .text-slate-500 { color: #64748b; }
+    html[data-theme="light"] .hover\:text-slate-200:hover { color: #0f172a; }
+    html[data-theme="light"] .text-emerald-400 { color: #047857; }
+    html[data-theme="light"] .text-emerald-300 { color: #047857; }
+    html[data-theme="light"] .text-amber-400,
+    html[data-theme="light"] .text-amber-300 { color: #b45309; }
+    html[data-theme="light"] .text-amber-200 { color: #92400e; }
+    html[data-theme="light"] .text-blue-400,
+    html[data-theme="light"] .text-blue-300 { color: #1d4ed8; }
+    html[data-theme="light"] .text-purple-400,
+    html[data-theme="light"] .text-purple-300 { color: #7e22ce; }
+    html[data-theme="light"] .text-red-400,
+    html[data-theme="light"] .text-red-300 { color: #b91c1c; }
+    html[data-theme="light"] .text-red-100 { color: #7f1d1d; }
+    html[data-theme="light"] .border-blue-400 { border-color: #2563eb; }
+    /* 색이 채워진 버튼·이름표 안의 글자는 계속 흰색 */
+    html[data-theme="light"] .bg-emerald-600.text-white,
+    html[data-theme="light"] .bg-blue-600.text-white,
+    html[data-theme="light"] .bg-amber-600.text-white,
+    html[data-theme="light"] .bg-purple-600.text-white,
+    html[data-theme="light"] .bg-slate-600.text-white { color: #ffffff; }
+    /* 코드 박스는 라이트 모드에서도 어둡게 유지 (코드가 잘 보이도록) */
+    html[data-theme="light"] .bg-slate-950 { background-color: #0f172a; border-color: #334155; }
+    html[data-theme="light"] pre, html[data-theme="light"] pre code { color: #cbd5e1 !important; }
+    html[data-theme="light"] .bg-slate-950 .text-emerald-400 { color: #34d399; }
+    html[data-theme="light"] .bg-slate-950 .text-amber-400 { color: #fbbf24; }
+    html[data-theme="light"] .bg-slate-950 .text-blue-400 { color: #60a5fa; }
+    html[data-theme="light"] .bg-slate-950 .text-purple-400 { color: #c084fc; }
+    html[data-theme="light"] .bg-slate-950 .bg-slate-800 { background-color: #1e293b; }
+    html[data-theme="light"] .bg-slate-950 .bg-slate-800:hover { background-color: #334155; }
+    html[data-theme="light"] .bg-slate-950 .text-slate-200 { color: #e2e8f0; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between">
+
+  <!-- 상단 네비게이션 헤더 -->
+  <header class="bg-slate-800/80 backdrop-blur border-b border-slate-700 sticky top-0 z-50 px-4 py-3">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <span class="bg-emerald-500/20 text-emerald-400 p-2 rounded-lg text-lg">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </span>
+        <div>
+          <h1 class="font-bold text-lg text-white">PWA 웹 앱 만들기 (GAS + GitHub)</h1>
+          <p class="text-xs text-slate-400">실습형 수업 가이드 자료</p>
+        </div>
+      </div>
+      
+      <!-- 슬라이드 카운터 및 퀵 이동 -->
+      <div class="flex flex-wrap items-center gap-2 justify-end">
+        <button onclick="toggleTheme()" id="themeBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center" aria-label="화면 밝기 전환">
+          <i id="themeIcon" class="fa-solid fa-sun mr-1.5"></i><span id="themeLabel">라이트</span>
+        </button>
+        <div class="flex items-center bg-slate-700 rounded-lg border border-slate-600 text-slate-200" title="글자 크기">
+          <button onclick="changeFont(-1)" id="fontDown" class="px-3 py-1.5 text-xs font-bold hover:bg-slate-600 rounded-l-lg" aria-label="글자 작게">가−</button>
+          <span id="fontLabel" class="px-2 text-xs font-mono">115%</span>
+          <button onclick="changeFont(1)" id="fontUp" class="px-3 py-1.5 text-base font-bold hover:bg-slate-600 rounded-r-lg" aria-label="글자 크게">가+</button>
+        </div>
+        <select id="slideSelect" onchange="goToSlide(parseInt(this.value))" class="bg-slate-700 text-xs text-slate-200 px-3 py-1.5 rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          <option value="0">1. 개요 및 구조</option>
+          <option value="1">2. 사전 준비</option>
+          <option value="2">3. 1단계: 백엔드(GAS)</option>
+          <option value="3">4. 2단계: 프론트엔드 & PWA</option>
+          <option value="4">5. 3단계: 배포 및 설치</option>
+          <option value="5">6. 기능 추가 시 고칠 파일</option>
+          <option value="6">7. 트러블슈팅 & FAQ</option>
+        </select>
+        <span class="text-xs text-slate-400 font-mono px-2" id="slideIndicator">1 / 7</span>
+      </div>
+    </div>
+    <!-- 프로그레스 바 -->
+    <div class="w-full bg-slate-700 h-1 absolute bottom-0 left-0">
+      <div id="progressBar" class="bg-emerald-500 h-1 transition-all duration-300 w-1/7"></div>
+    </div>
+  </header>
+
+  <!-- 메인 슬라이드 컨텐츠 영역 -->
+  <main class="max-w-6xl mx-auto w-full px-4 py-6 flex-grow">
+    
+    <!-- 슬라이드 1: 개요 및 구조 -->
+    <div class="slide active" id="slide-0">
+      <div class="bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-700 shadow-xl">
+        <div class="inline-block px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-sm font-semibold mb-3">
+          Lesson Overview
+        </div>
+        <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">프로젝트 개요 및 시스템 구조</h2>
+        <p class="text-slate-300 mb-6 leading-relaxed">
+          구글 스프레드시트를 데이터베이스로 활용하고, GitHub Pages를 이용해 언제 어디서나 스마트폰에 설치할 수 있는 <strong class="text-emerald-400">PWA(Progressive Web App) "한 줄 메모장"</strong>을 제작해 봅니다.
+        </p>
+
+        <!-- 아키텍처 비주얼 보드 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 my-8">
+          <!-- 프론트엔드 -->
+          <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700 flex flex-col items-center text-center">
+            <div class="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center text-xl mb-3">
+              <i class="fa-brands fa-github"></i>
+            </div>
+            <h3 class="font-semibold text-blue-400 mb-1">프론트엔드 (PWA)</h3>
+            <p class="text-sm text-slate-400 mb-2">GitHub Pages 호스팅</p>
+            <ul class="text-sm text-slate-300 space-y-1 text-left w-full bg-slate-800/50 p-3 rounded-lg">
+              <li>• 사용자 화면 UI (HTML/CSS)</li>
+              <li>• PWA 앱 설치 지원 (`manifest`)</li>
+              <li>• 오프라인 캐싱 (`sw.js`)</li>
+            </ul>
+          </div>
+
+          <!-- 연결 (API) -->
+          <div class="hidden md:flex flex-col items-center justify-center text-slate-500">
+            <i class="fa-solid fa-arrow-right-long text-2xl text-emerald-400 animate-pulse"></i>
+            <span class="text-sm font-mono text-emerald-400 mt-1">HTTP POST (JSON)</span>
+          </div>
+
+          <!-- 백엔드 -->
+          <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700 flex flex-col items-center text-center">
+            <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center text-xl mb-3">
+              <i class="fa-solid fa-server"></i>
+            </div>
+            <h3 class="font-semibold text-emerald-400 mb-1">백엔드 & DB</h3>
+            <p class="text-sm text-slate-400 mb-2">Google Apps Script</p>
+            <ul class="text-sm text-slate-300 space-y-1 text-left w-full bg-slate-800/50 p-3 rounded-lg">
+              <li>• `doPost(e)` API 엔드포인트</li>
+              <li>• 수신된 메모 데이터 처리</li>
+              <li>• 구글 스프레드시트에 자동 기록</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 p-4 rounded-xl border-l-4 border-emerald-500 text-sm text-slate-300">
+          <strong class="text-white block mb-1">💡 왜 이 방식을 사용하나요?</strong>
+          GAS 웹 앱은 <code class="text-amber-300">manifest.json</code>·<code class="text-amber-300">sw.js</code> 같은 정적 파일을 직접 호스팅할 수 없어 PWA(서비스 워커 등록)를 구성하기 어렵습니다. 
+          따라서 정적 웹 호스팅인 <strong>GitHub Pages</strong>에 프론트엔드를 두고, <strong>GAS</strong>를 API 서버로 연결하는 표준적인 방식을 사용합니다.
+        </div>
+
+        <!-- 쉬운 비유와 용어 풀이 -->
+        <div class="bg-slate-900/70 p-5 rounded-xl border border-emerald-500/30 mb-4">
+          <h4 class="font-bold text-emerald-400 mb-3 text-base"><i class="fa-solid fa-lightbulb mr-2"></i>먼저 쉬운 비유로 이해하기</h4>
+          <p class="text-slate-300 text-sm leading-relaxed mb-3">
+            <strong class="text-white">GitHub Pages = 가게 간판과 진열대</strong>(사람들이 보고 누르는 화면) /
+            <strong class="text-white">Google Apps Script = 주문을 받아 적는 비서</strong> /
+            <strong class="text-white">스프레드시트 = 주문 장부</strong><br>
+            손님(나)이 화면에 메모를 적어 [전송]을 누르면 → 비서(GAS)가 받아서 → 장부(시트)에 한 줄 적어 줍니다.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-slate-300">
+            <div class="bg-slate-800/70 p-3 rounded-lg"><strong class="text-white">저장소(Repository)</strong><br>GitHub 안에 있는 내 프로젝트 폴더</div>
+            <div class="bg-slate-800/70 p-3 rounded-lg"><strong class="text-white">커밋(Commit)</strong><br>변경한 내용을 저장 버튼으로 기록하는 것</div>
+            <div class="bg-slate-800/70 p-3 rounded-lg"><strong class="text-white">배포(Deploy)</strong><br>만든 것을 인터넷 주소로 공개하는 것</div>
+            <div class="bg-slate-800/70 p-3 rounded-lg"><strong class="text-white">API / 엔드포인트</strong><br>프로그램끼리 데이터를 주고받는 창구(주소)</div>
+            <div class="bg-slate-800/70 p-3 rounded-lg"><strong class="text-white">POST / JSON</strong><br>데이터를 '보내는 방식' / 데이터를 담는 '글자 형식'</div>
+            <div class="bg-slate-800/70 p-3 rounded-lg"><strong class="text-white">PWA</strong><br>웹사이트를 스마트폰 앱처럼 설치해 쓰는 기술</div>
+          </div>
+        </div>
+
+        <!-- 심화 학습: 원리 심층 해설 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/60 text-sm">
+            <h4 class="font-semibold text-emerald-400 mb-2 flex items-center">
+              <i class="fa-solid fa-network-wired mr-2"></i> PWA(Progressive Web App)의 핵심 원리
+            </h4>
+            <p class="text-slate-300 leading-relaxed">
+              PWA는 일반 웹 사이트에 <strong>Manifest(앱 설정)</strong>와 <strong>Service Worker(오프라인 캐싱)</strong>를 결합하여, 스마트폰이나 PC에 실제 애플리케이션처럼 설치해서 사용할 수 있게 해주는 기술입니다.
+            </p>
+          </div>
+          <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/60 text-sm">
+            <h4 class="font-semibold text-blue-400 mb-2 flex items-center">
+              <i class="fa-solid fa-shield-halved mr-2"></i> [심화] CORS(크로스 오리진) 이슈
+            </h4>
+            <details><summary class="cursor-pointer text-blue-300 font-semibold">눌러서 펼치기 (심화 내용 - 처음엔 건너뛰어도 됩니다)</summary><p class="text-slate-300 leading-relaxed mt-2">
+              GitHub Pages 도메인과 GAS 도메인이 달라 브라우저의 보안 정책(CORS)이 적용됩니다. 이를 피하기 위해 요청 헤더의 <code class="text-amber-300">Content-Type</code>을 <code class="text-amber-300">text/plain</code>으로 보내 '단순 요청(Simple Request)'으로 만들면, 사전 검사(Preflight) 없이 데이터를 전송할 수 있습니다.
+            </p></details>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬라이드 2: 사전 준비 -->
+    <div class="slide" id="slide-1">
+      <div class="bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-700 shadow-xl">
+        <div class="inline-block px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-sm font-semibold mb-3">
+          Prerequisites
+        </div>
+        <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">실습 전 준비 사항</h2>
+        <p class="text-slate-300 mb-6">수업을 진행하기 위해 모든 학생이 아래 항목들을 준비했는지 확인해 주세요.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 my-6">
+          <div class="bg-slate-900 p-5 rounded-xl border border-slate-700 flex items-start space-x-4">
+            <div class="text-2xl text-red-400 mt-1"><i class="fa-brands fa-google"></i></div>
+            <div>
+              <h3 class="font-semibold text-white">Google 계정</h3>
+              <p class="text-sm text-slate-400 mt-1">스프레드시트 및 Apps Script 작성을 위해 로그인 필요</p>
+            </div>
+          </div>
+
+          <div class="bg-slate-900 p-5 rounded-xl border border-slate-700 flex items-start space-x-4">
+            <div class="text-2xl text-white mt-1"><i class="fa-brands fa-github"></i></div>
+            <div>
+              <h3 class="font-semibold text-white">GitHub 계정</h3>
+              <p class="text-sm text-slate-400 mt-1">코드 저장 및 GitHub Pages 웹 사이트 무료 배포</p>
+            </div>
+          </div>
+
+          <div class="bg-slate-900 p-5 rounded-xl border border-slate-700 flex items-start space-x-4">
+            <div class="text-2xl text-blue-400 mt-1"><i class="fa-brands fa-chrome"></i></div>
+            <div>
+              <h3 class="font-semibold text-white">Chrome 브라우저</h3>
+              <p class="text-sm text-slate-400 mt-1">PWA 디버깅 및 앱 설치 테스트용 브라우저</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- GitHub 회원가입 상세 가이드 -->
+        <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700 text-sm mb-4">
+          <h4 class="font-bold text-white mb-3 flex items-center text-sm">
+            <i class="fa-brands fa-github text-emerald-400 mr-2 text-base"></i> GitHub 회원가입 단계별 안내 (계정이 없는 학생)
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3 text-slate-300">
+            <div class="bg-slate-800/70 p-3 rounded-lg border border-slate-700/60">
+              <span class="inline-block bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded text-xs mb-1">Step 1</span>
+              <strong class="block text-white mb-1">사이트 접속</strong>
+              <code class="text-blue-300 break-all">github.com</code> 접속 후 우측 상단의 <span class="text-emerald-400 font-semibold">[Sign up]</span> 클릭
+            </div>
+            <div class="bg-slate-800/70 p-3 rounded-lg border border-slate-700/60">
+              <span class="inline-block bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded text-xs mb-1">Step 2</span>
+              <strong class="block text-white mb-1">이메일 & 암호 입력</strong>
+              사용 중인 이메일 입력 후 비밀번호(8자 이상, 영문/숫자/특수문자 조합) 설정
+            </div>
+            <div class="bg-slate-800/70 p-3 rounded-lg border border-slate-700/60">
+              <span class="inline-block bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded text-xs mb-1">Step 3</span>
+              <strong class="block text-white mb-1">Username 설정</strong>
+              영문 아이디(Username) 입력<br><span class="text-slate-400 text-xs">※ 작성한 아이디가 웹 사이트 주소가 됩니다!</span>
+            </div>
+            <div class="bg-slate-800/70 p-3 rounded-lg border border-slate-700/60">
+              <span class="inline-block bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded text-xs mb-1">Step 4</span>
+              <strong class="block text-white mb-1">인증 & 완료</strong>
+              봇 확인 퀴즈를 풀고 이메일로 발송된 인증 코드를 입력하면 가입 완료!
+            </div>
+          </div>
+        </div>
+
+        <!-- 준비물 세부 체크포인트 가이드 -->
+        <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700 text-sm space-y-2">
+          <h4 class="font-bold text-emerald-400 mb-2"><i class="fa-solid fa-list-check mr-2"></i>수업 전 교사/학생 체크리스트</h4>
+          <ul class="list-disc list-inside text-slate-300 space-y-1">
+            <li><strong>구글 드라이브 접근:</strong> 구글 계정 로그인 상태에서 스프레드시트를 정상 생성할 수 있는지 확인</li>
+            <li><strong>GitHub 저장소 생성 권한:</strong> GitHub 로그인 후 Public 저장소를 신규 생성할 수 있는지 확인</li>
+            <li><strong>(선택) 오류 확인용 F12:</strong> 앱이 안 될 때 <kbd class="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-600">F12</kbd> ➔ <strong>Console</strong> 탭의 빨간 오류 글씨를 복사해 Gem에게 보여 주는 용도로만 씁니다. 지금 몰라도 괜찮아요!</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬라이드 3: 1단계 백엔드 (GAS) -->
+    <div class="slide" id="slide-2">
+      <div class="bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-700 shadow-xl">
+        <div class="inline-block px-3 py-1 bg-amber-500/10 text-amber-400 rounded-full text-sm font-semibold mb-3">
+          Step 1 : Backend Setup
+        </div>
+        <h2 class="text-2xl md:text-3xl font-bold text-white mb-2">1단계: Google Apps Script API 구축</h2>
+        <p class="text-slate-300 mb-4 text-sm">구글 스프레드시트에 데이터를 자동 기록하는 백엔드 API를 생성합니다. <span class="text-amber-300 font-semibold">⏱ 예상 15분</span></p>
+
+        <!-- 세부 과정 순서 -->
+        <ol class="list-decimal list-inside text-sm text-slate-300 space-y-1 mb-4 bg-slate-900/60 p-3 rounded-lg">
+          <li>Google 드라이브에서 <strong>새 구글 스프레드시트</strong>를 만들고 하단 시트 탭 이름을 <code class="text-emerald-400 bg-slate-800 px-1 py-0.5 rounded">data</code>로 변경합니다.</li>
+          <li>상단 메뉴 <strong>[확장 프로그램] > [Apps Script]</strong>를 클릭합니다.</li>
+          <li>기존 코드 대신 아래 코드를 복사하여 <code class="text-amber-300">Code.gs</code>에 붙여넣습니다.</li>
+        </ol>
+
+        <!-- 코드 블록 -->
+        <div class="relative bg-slate-950 rounded-xl p-4 border border-slate-700">
+          <div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-800">
+            <span class="text-sm font-mono text-amber-400"><i class="fa-regular fa-file-code mr-1"></i>Code.gs</span>
+            <button onclick="copyCode('code-gas')" class="bg-slate-800 hover:bg-slate-700 text-sm px-3 py-1 rounded text-slate-200 transition">
+              <i class="fa-regular fa-copy mr-1"></i>코드 복사
+            </button>
+          </div>
+          <pre id="code-gas" class="text-sm text-slate-300 overflow-x-auto leading-relaxed max-h-60 overflow-y-auto"><code>// 웹 앱 주소를 브라우저에서 열어 'OK'가 보이면 배포가 정상입니다.
+function doGet(e) {
+  return ContentService.createTextOutput('OK');
+}
+
+function doPost(e) {
+  try {
+    // 1. 전달받은 JSON 데이터 파싱
+    var data = JSON.parse(e.postData.contents);
+
+    // 1-1. 메모 검사: 비어 있으면 오류, 수식(= + - @)으로 시작하면 문자로 저장
+    var memo = String(data.memo || '').trim();
+    if (!memo) throw new Error('메모 내용이 비어 있습니다.');
+    memo = memo.replace(/^([=+\-@])/, "'$1");
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName('data');
+    
+    // 2. 'data' 시트가 없으면 자동 생성
+    if (!sheet) {
+      sheet = ss.insertSheet('data');
+    }
+    
+    // 3. 헤더 셀이 비어있으면 초기화
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(['내용', '시간']);
+    }
+    
+    // 4. 현재 시간 생성 (YYYY-MM-DD HH:mm:ss)
+    var now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+    
+    // 5. 시트에 데이터 추가
+    sheet.appendRow([memo, now]);
+    
+    return ContentService.createTextOutput(JSON.stringify({ result: 'success' }))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ result: 'error', message: error.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}</code></pre>
+        </div>
+
+        <!-- 배포 안내 -->
+        <div class="mt-4 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-sm text-amber-200">
+          <strong class="block text-amber-300 mb-1">⚠️ 중요! 웹 앱 배포 설정</strong>
+          우측 상단 <strong>[배포] > [새 배포]</strong> ➔ 유형: <strong>웹 앱</strong> 선택<br>
+          • <strong>다음 사용자 권한으로 실행: 나(Me)</strong> 로 설정<br>
+          • <strong>액세스 권한 있는 사용자: 모든 사용자 (Anyone)</strong> 로 변경 후 배포!<br>
+          • 배포 후 생성된 <strong>웹 앱 URL</strong>을 반드시 복사하세요! 브라우저 주소창에 붙여넣어 <strong>OK</strong>가 보이면 성공입니다.<br>
+          • <strong>💡 구글 보안 경고가 나타나는 경우:</strong> [고급(Advanced)] ➔ [(안전하지 않은 페이지로 이동)] ➔ [허용(Allow)]을 순서대로 클릭하여 진행합니다.
+        </div>
+
+        <div class="mt-4 bg-emerald-500/10 border border-emerald-500/40 rounded-xl p-4 text-sm text-slate-200"><strong class="block text-emerald-300 mb-2">✅ 확인하기: 1단계가 잘 끝났는지 점검</strong><ul class="list-disc list-inside space-y-1"><li>복사한 <strong>웹 앱 URL</strong>을 브라우저 새 탭 주소창에 붙여넣으면 화면에 <strong>OK</strong>가 보인다.</li><li>웹 앱 URL을 메모장 등에 따로 적어 두었다. (2단계에서 사용합니다)</li><li>실행 권한: <strong>나(Me)</strong>, 액세스: <strong>모든 사용자</strong>로 배포했다.</li></ul></div>
+
+        <!-- GAS 주요 코드 라인별 심화 해설 카드 -->
+        <div class="mt-4 bg-slate-900 p-4 rounded-xl border border-slate-700 text-sm">
+          <h4 class="font-bold text-amber-400 mb-2"><i class="fa-solid fa-code mr-2"></i>GAS 주요 주요 기능 한 줄 해설</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-slate-300">
+            <div><code class="text-emerald-400">doGet(e)</code>: 주소창으로 접속했을 때 'OK'를 돌려주는 동작 확인용 함수</div>
+            <div><code class="text-emerald-400">doPost(e)</code>: 클라이언트에서 POST 방식으로 전송한 요청을 수신하는 웹훅 메인 함수</div>
+            <div><code class="text-emerald-400">replace(/^([=+\-@])/, ...)</code>: 시트에서 수식으로 실행되지 않도록 앞에 ' 를 붙여 문자로 저장</div>
+            <div><code class="text-emerald-400">e.postData.contents</code>: 웹 페이지에서 보낸 JSON 문자열 데이터 수신</div>
+            <div><code class="text-emerald-400">sheet.appendRow([...])</code>: 시트 맨 마지막 줄에 배열 항목을 새로운 행(Row)으로 입력</div>
+            <div><code class="text-emerald-400">ContentService...</code>: 데이터 처리 결과를 JSON 형식 문자열로 응답 전달</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬라이드 4: 2단계 프론트엔드 및 PWA -->
+    <div class="slide" id="slide-3">
+      <div class="bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-700 shadow-xl">
+        <div class="inline-block px-3 py-1 bg-blue-500/10 text-blue-400 rounded-full text-sm font-semibold mb-3">
+          Step 2 : Frontend & PWA Files
+        </div>
+        <h2 class="text-2xl md:text-3xl font-bold text-white mb-2">2단계: 프론트엔드 및 PWA 설정</h2>
+        <p class="text-slate-300 mb-4 text-sm">GitHub 저장소에 올릴 파일은 코드 3개(index.html, manifest.json, sw.js)와 아이콘 이미지 2개입니다. 각 탭을 눌러 소스코드를 복사하세요. <span class="text-blue-300 font-semibold">⏱ 예상 20분</span></p>
+
+        <!-- GitHub 초보자용 파일 생성 및 올리기 단계별 상세 가이드 -->
+        <div class="bg-slate-900/90 p-5 rounded-xl border border-blue-500/30 text-sm mb-6">
+          <h3 class="font-bold text-blue-400 mb-3 flex items-center text-sm">
+            <i class="fa-brands fa-github mr-2 text-base"></i> GitHub 웹사이트에서 3개 파일 직접 만드는 방법 (초보자 가이드)
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-slate-300">
+            <div class="bg-slate-800/80 p-3 rounded-lg border border-slate-700/80">
+              <span class="inline-block bg-blue-500/20 text-blue-400 font-bold px-2 py-0.5 rounded text-xs mb-1.5">1단계: 저장소(Repository) 만들기</span>
+              <p class="leading-relaxed text-slate-300">
+                GitHub 메인에서 우측 상단 <strong class="text-white">[+]</strong> ➔ <strong class="text-white">[New repository]</strong> 클릭<br>
+                • Repository name: <code class="text-emerald-400 bg-slate-900 px-1 py-0.5 rounded">my-memo-pwa</code><br>
+                • <strong class="text-emerald-400">Public</strong> 선택 (무료 배포 필수)<br>
+                • <strong class="text-white font-normal">Add a README file</strong> 체크 후 <span class="text-emerald-400 font-semibold">[Create repository]</span> 클릭!
+              </p>
+            </div>
+            <div class="bg-slate-800/80 p-3 rounded-lg border border-slate-700/80">
+              <span class="inline-block bg-blue-500/20 text-blue-400 font-bold px-2 py-0.5 rounded text-xs mb-1.5">2단계: 새 파일 생성 및 코드 작성</span>
+              <p class="leading-relaxed text-slate-300">
+                생성된 저장소 화면에서 <strong class="text-white">[Add file]</strong> ➔ <strong class="text-white">[Create new file]</strong> 클릭<br>
+                • 파일명 입력란에 <code class="text-amber-300 bg-slate-900 px-1 py-0.5 rounded">index.html</code> 입력<br>
+                • 본문 입력 창에 아래 탭에서 복사한 <code class="text-blue-300">index.html</code> 소스코드 붙여넣기
+              </p>
+            </div>
+            <div class="bg-slate-800/80 p-3 rounded-lg border border-slate-700/80">
+              <span class="inline-block bg-blue-500/20 text-blue-400 font-bold px-2 py-0.5 rounded text-xs mb-1.5">3단계: 저장하기 (Commit Changes)</span>
+              <p class="leading-relaxed text-slate-300">
+                우측 상단 녹색 <strong class="text-emerald-400">[Commit changes...]</strong> 클릭 ➔ 팝업창에서 다시 <strong class="text-emerald-400">[Commit changes]</strong> 클릭하면 저장 완료!<br>
+                <span class="text-slate-400 text-xs">※ <code class="text-purple-300">manifest.json</code>과 <code class="text-emerald-300">sw.js</code> 파일도 동일한 방법으로 만들고, 아이콘 이미지 2개(<code class="text-amber-300">icon-192.png</code>, <code class="text-amber-300">icon-512.png</code>)는 [Add file] ➔ [Upload files]로 올립니다.</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2단계 필수 주의: GAS_URL 교체, 아이콘 받기 -->
+        <div class="bg-red-500/10 border border-red-500/40 rounded-xl p-4 text-sm text-red-100 mb-4">
+          <strong class="block text-red-300 mb-2">⚠️ 꼭 먼저 읽으세요! index.html을 저장(Commit)하기 전에</strong>
+          <ol class="list-decimal list-inside space-y-1">
+            <li>붙여넣은 코드에서 <code class="text-amber-300 bg-slate-900 px-1 rounded">"여기에_1단계에서_복사한_URL을_붙여넣으세요"</code> 부분을 <strong>따옴표는 남기고</strong> 안의 글자만 1단계에서 복사한 <strong>웹 앱 URL</strong>로 바꿉니다.</li>
+            <li>예) <code class="text-emerald-300 bg-slate-900 px-1 rounded">const GAS_URL = "https://script.google.com/macros/s/....../exec";</code></li>
+            <li>저장한 뒤에 고치려면: 저장소에서 <strong>index.html</strong> 클릭 ➔ 오른쪽 위 <strong>연필(✏️) 아이콘</strong> ➔ 수정 ➔ <strong>Commit changes</strong></li>
+          </ol>
+          <p class="mt-3 text-slate-200">
+            📥 <strong>아이콘 이미지 2개</strong>(<code class="text-amber-300">icon-192.png</code>, <code class="text-amber-300">icon-512.png</code>)는 선생님이 안내한 <strong>구글 드라이브(또는 클래스룸) 링크</strong>에서 내 컴퓨터로 내려받은 뒤, 저장소에서 <strong>[Add file] ➔ [Upload files]</strong>로 올리고 Commit 합니다. (파일 이름을 바꾸면 안 됩니다)
+          </p>
+        </div>
+
+        <!-- 탭 버튼 -->
+        <div class="flex space-x-2 border-b border-slate-700 mb-4">
+          <button onclick="switchTab('tab-html')" id="btn-tab-html" class="tab-btn px-4 py-2 text-sm font-semibold border-b-2 border-blue-400 text-blue-400">
+            index.html (화면)
+          </button>
+          <button onclick="switchTab('tab-manifest')" id="btn-tab-manifest" class="tab-btn px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-200">
+            manifest.json (앱 설정)
+          </button>
+          <button onclick="switchTab('tab-sw')" id="btn-tab-sw" class="tab-btn px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-200">
+            sw.js (서비스 워커)
+          </button>
+        </div>
+
+        <!-- 탭 1: index.html -->
+        <div id="tab-html" class="tab-content">
+          <div class="relative bg-slate-950 rounded-xl p-4 border border-slate-700">
+            <div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-800">
+              <span class="text-sm font-mono text-blue-400">index.html (GAS_URL 부분에 1단계 URL 적용)</span>
+              <button onclick="copyCode('code-html')" class="bg-slate-800 hover:bg-slate-700 text-sm px-3 py-1 rounded text-slate-200 transition">
+                <i class="fa-regular fa-copy mr-1"></i>코드 복사
+              </button>
+            </div>
+            <pre id="code-html" class="text-sm text-slate-300 overflow-x-auto leading-relaxed max-h-64 overflow-y-auto"><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="ko"&gt;
+&lt;head&gt;
+  &lt;meta charset="UTF-8"&gt;
+  &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+  &lt;title&gt;한 줄 메모장&lt;/title&gt;
+  &lt;link rel="manifest" href="manifest.json"&gt;
+  &lt;meta name="theme-color" content="#4CAF50"&gt;
+  &lt;link rel="apple-touch-icon" href="icon-192.png"&gt;
+  &lt;style&gt;
+    body { font-family: sans-serif; padding: 20px; max-width: 400px; margin: 0 auto; }
+    .input-group { display: flex; gap: 8px; margin-top: 15px; }
+    input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+    button { padding: 10px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:disabled { background-color: #ccc; }
+    #status { margin-top: 10px; font-size: 13px; color: #666; }
+    #installBox { margin-top: 20px; padding: 14px; background: #e8f5e9; border-radius: 8px; display: none; }
+    #installBtn { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; }
+    #installHelp { margin: 10px 0 0; font-size: 13px; color: #2e5d31; line-height: 1.5; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h3&gt;📝 나만의 한 줄 메모장 (PWA)&lt;/h3&gt;
+  &lt;div class="input-group"&gt;
+    &lt;input type="text" id="memoInput" placeholder="메모할 내용을 입력하세요"&gt;
+    &lt;button id="sendBtn" onclick="sendMemo()"&gt;전송&lt;/button&gt;
+  &lt;/div&gt;
+  &lt;div id="status"&gt;&lt;/div&gt;
+
+  &lt;!-- 앱 설치 안내: 주소창을 못 찾는 학생을 위해 화면 안에 설치 버튼을 둡니다 --&gt;
+  &lt;div id="installBox"&gt;
+    &lt;button id="installBtn"&gt;📲 앱으로 설치하기&lt;/button&gt;
+    &lt;p id="installHelp"&gt;&lt;/p&gt;
+  &lt;/div&gt;
+
+  &lt;script&gt;
+    // 1. 서비스 워커 등록
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(() =&gt; console.log('Service Worker Registered'));
+    }
+
+    // 설치 버튼 (PWA 설치를 화면 안에서 바로 할 수 있게 해 줍니다)
+    let deferredPrompt = null;
+    const installBox = document.getElementById('installBox');
+    const installBtn = document.getElementById('installBtn');
+    const installHelp = document.getElementById('installHelp');
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+    // 이미 앱으로 실행 중이면 설치 버튼을 보여 주지 않음
+    if (!isStandalone) installBox.style.display = 'block';
+
+    // 크롬/엣지/안드로이드: 설치 준비가 되면 브라우저가 이 이벤트를 보내 줌
+    window.addEventListener('beforeinstallprompt', (e) =&gt; {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    window.addEventListener('appinstalled', () =&gt; {
+      installBox.style.display = 'none';
+    });
+
+    installBtn.addEventListener('click', async () =&gt; {
+      if (deferredPrompt) {
+        // 설치 팝업을 바로 띄움
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+      } else if (isIOS) {
+        installHelp.innerText = '아이폰/아이패드는 Safari에서 아래 가운데 [공유(□↑)] 버튼 ➔ [홈 화면에 추가]를 눌러 주세요. (카카오톡 등 앱 안의 브라우저에서는 안 됩니다)';
+      } else {
+        installHelp.innerText = '크롬 주소창 오른쪽의 설치 아이콘(⊕) 또는 오른쪽 위 ⋮ 메뉴 ➔ [앱 설치] / [홈 화면에 추가]를 눌러 주세요. 이미 설치했다면 앱 목록에서 실행하세요.';
+      }
+    });
+
+    // 2. 구글 앱 스크립트 웹 앱 URL 붙여넣기
+    const GAS_URL = "여기에_1단계에서_복사한_URL을_붙여넣으세요";
+
+    async function sendMemo() {
+      const input = document.getElementById('memoInput');
+      const btn = document.getElementById('sendBtn');
+      const status = document.getElementById('status');
+      const text = input.value.trim();
+
+      if (!text) return alert('내용을 입력하세요.');
+
+      btn.disabled = true;
+      status.innerText = '저장 중...';
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ memo: text })
+        });
+
+        // 서버(GAS)가 돌려준 결과를 확인해서 실패하면 오류로 처리
+        const result = await res.json();
+        if (result.result !== 'success') {
+          throw new Error(result.message || '서버 오류');
+        }
+
+        input.value = '';
+        status.innerText = '✅ 성공적으로 저장되었습니다!';
+        setTimeout(() =&gt; { status.innerText = ''; }, 2000);
+      } catch (err) {
+        status.innerText = '❌ 저장 실패: ' + err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+          </div>
+
+          <!-- HTML 코드 해설 카드 -->
+          <div class="mt-3 bg-slate-900 p-3 rounded-lg border border-slate-700/70 text-sm text-slate-300">
+            <strong class="text-blue-400 block mb-1">🔍 index.html 핵심 코드 포인트</strong>
+            <ul class="list-disc list-inside space-y-1 text-slate-400">
+              <li><code class="text-slate-200">&lt;link rel="manifest" href="manifest.json"&gt;</code>: 웹 브라우저에 이 사이트가 PWA 설치를 지원함을 선언합니다.</li>
+              <li><code class="text-slate-200">navigator.serviceWorker.register('sw.js')</code>: 백그라운드 캐싱을 담당할 서비스 워커 파일 등록 함수입니다.</li>
+              <li><code class="text-slate-200">beforeinstallprompt</code>: 브라우저가 "설치할 수 있어요"라고 알려 줄 때 받아 두었다가, 화면의 <strong>[📲 앱으로 설치하기]</strong> 버튼을 누르면 설치 팝업을 띄웁니다. (아이폰은 이 기능이 없어서 안내 문구를 보여 줍니다)</li>
+              <li><code class="text-slate-200">await res.json()</code>: GAS가 돌려준 처리 결과를 읽어, 실패했는데 성공으로 표시되는 일을 막습니다.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 탭 2: manifest.json -->
+        <div id="tab-manifest" class="tab-content hidden">
+          <div class="relative bg-slate-950 rounded-xl p-4 border border-slate-700">
+            <div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-800">
+              <span class="text-sm font-mono text-purple-400">manifest.json (앱 설치 아이콘 및 설정)</span>
+              <button onclick="copyCode('code-manifest')" class="bg-slate-800 hover:bg-slate-700 text-sm px-3 py-1 rounded text-slate-200 transition">
+                <i class="fa-regular fa-copy mr-1"></i>코드 복사
+              </button>
+            </div>
+            <pre id="code-manifest" class="text-sm text-slate-300 overflow-x-auto leading-relaxed max-h-64 overflow-y-auto"><code>{
+  "name": "나만의 한 줄 메모장",
+  "short_name": "한줄메모",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4CAF50",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}</code></pre>
+          </div>
+
+          <!-- Manifest 해설 카드 -->
+          <div class="mt-3 bg-slate-900 p-3 rounded-lg border border-slate-700/70 text-sm text-slate-300">
+            <strong class="text-purple-400 block mb-1">🔍 manifest.json 핵심 주요 속성</strong>
+            <ul class="list-disc list-inside space-y-1 text-slate-400">
+              <li><code class="text-slate-200">"display": "standalone"</code>: 브라우저의 URL 주소창과 메뉴바를 제거하고 스마트폰 앱처럼 독립 실행창으로 실행합니다.</li>
+              <li><code class="text-slate-200">"icons"</code>: 192x192(홈 화면 아이콘) 및 512x512(스플래시 스크린 아이콘) 필수 규격을 지정합니다.</li>
+              <li class="text-amber-300">⚠️ 선생님이 나눠 준 <strong>icon-192.png</strong>, <strong>icon-512.png</strong> 두 파일을 저장소에 [Add file] ➔ [Upload files]로 꼭 올려야 합니다. (파일명이 다르면 설치 버튼이 나타나지 않습니다)</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 탭 3: sw.js -->
+        <div id="tab-sw" class="tab-content hidden">
+          <div class="relative bg-slate-950 rounded-xl p-4 border border-slate-700">
+            <div class="flex justify-between items-center mb-2 pb-2 border-b border-slate-800">
+              <span class="text-sm font-mono text-emerald-400">sw.js (오프라인 서비스 워커)</span>
+              <button onclick="copyCode('code-sw')" class="bg-slate-800 hover:bg-slate-700 text-sm px-3 py-1 rounded text-slate-200 transition">
+                <i class="fa-regular fa-copy mr-1"></i>코드 복사
+              </button>
+            </div>
+            <pre id="code-sw" class="text-sm text-slate-300 overflow-x-auto leading-relaxed max-h-64 overflow-y-auto"><code>const CACHE_NAME = 'memo-pwa-v1';
+const ASSETS = [
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
+];
+
+// 설치: 필요한 파일을 캐시에 저장
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+  );
+  self.skipWaiting();
+});
+
+// 활성화: 이름이 다른 옛 캐시 삭제 (CACHE_NAME을 바꾸면 이전 캐시가 정리됨)
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+    )
+  );
+  self.clients.claim();
+});
+
+// 요청 처리: 네트워크 우선, 오프라인이면 캐시 사용
+self.addEventListener('fetch', (e) => {
+  // GAS로 보내는 POST 등 GET이 아닌 요청은 건드리지 않음
+  if (e.request.method !== 'GET') return;
+
+  e.respondWith(
+    fetch(e.request)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(e.request, copy));
+        return res;
+      })
+      .catch(() => caches.match(e.request))
+  );
+});</code></pre>
+          </div>
+
+          <!-- Service Worker 해설 카드 -->
+          <div class="mt-3 bg-slate-900 p-3 rounded-lg border border-slate-700/70 text-sm text-slate-300">
+            <strong class="text-emerald-400 block mb-1">🔍 sw.js 작동 라이프사이클</strong>
+            <ul class="list-disc list-inside space-y-1 text-slate-400">
+              <li><code class="text-slate-200">install 이벤트</code>: 최초 방문 시 <code class="text-emerald-300">ASSETS</code> 배열에 정의된 정적 파일(HTML, JSON 등)을 브라우저 로컬 캐시에 저장합니다.</li>
+              <li><code class="text-slate-200">activate 이벤트</code>: 이름이 다른 옛 캐시를 지웁니다. 코드를 크게 바꿀 때는 <code class="text-emerald-300">CACHE_NAME</code>(예: v2)을 바꿔 주세요.</li>
+              <li><code class="text-slate-200">fetch 이벤트</code>: 평소에는 네트워크에서 최신 파일을 받아 오고, 오프라인이면 저장된 캐시로 화면을 보여 줍니다. POST(메모 전송)는 처리하지 않습니다.</li>
+              <li class="text-amber-300">※ 오프라인에서는 <strong>화면만 열리며</strong>, 메모 전송은 인터넷이 연결되어야 합니다.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-4 bg-blue-500/10 border border-blue-500/40 rounded-xl p-4 text-sm text-slate-200"><strong class="block text-blue-300 mb-2">✅ 확인하기: 2단계가 잘 끝났는지 점검</strong><ul class="list-disc list-inside space-y-1"><li>저장소(Code 탭) 파일 목록에 <strong>index.html, manifest.json, sw.js, icon-192.png, icon-512.png</strong>가 모두 보인다. (README.md는 있어도 됩니다)</li><li>파일 이름의 영문 대소문자와 확장자가 정확하다. (<code>Index.html</code>, <code>index.html.txt</code>는 오류의 원인!)</li><li>index.html 안의 <code>GAS_URL</code>이 내 웹 앱 URL로 바뀌어 있다.</li></ul></div>
+      </div>
+    </div>
+
+    <!-- 슬라이드 5: 3단계 배포 및 설치 -->
+    <div class="slide" id="slide-4">
+      <div class="bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-700 shadow-xl">
+        <div class="inline-block px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-sm font-semibold mb-3">
+          Step 3 : Deploy & Install
+        </div>
+        <h2 class="text-2xl md:text-3xl font-bold text-white mb-2">3단계: GitHub Pages 배포 및 PWA 설치</h2>
+        <p class="text-slate-300 mb-6 text-sm">작성한 코드를 GitHub Pages로 배포하고 실제 웹 앱으로 설치합니다. <span class="text-emerald-300 font-semibold">⏱ 예상 10~15분</span></p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- 배포 절차 -->
+          <div class="bg-slate-900 p-5 rounded-xl border border-slate-700">
+            <h3 class="font-bold text-white mb-3 flex items-center">
+              <i class="fa-brands fa-github text-blue-400 mr-2"></i> GitHub Pages 배포 순서
+            </h3>
+            <ol class="list-decimal list-inside text-sm text-slate-300 space-y-2">
+              <li>GitHub 저장소의 <strong>Settings</strong> 탭 클릭</li>
+              <li>왼쪽 사이드바 메뉴에서 <strong>Pages</strong> 선택</li>
+              <li><strong>Source</strong>는 <code class="bg-slate-800 text-emerald-400 px-1">Deploy from a branch</code>, <strong>Branch</strong>는 <code class="bg-slate-800 text-emerald-400 px-1">main</code> / <code class="bg-slate-800 text-emerald-400 px-1">/ (root)</code>로 선택 후 <strong>Save</strong></li>
+              <li>약 1~2분 후 나오는 URL 접속 (<code class="text-blue-300">https://username.github.io/repo/</code>)</li>
+            </ol>
+          </div>
+
+          <!-- PWA 설치 방법 -->
+          <div class="bg-slate-900 p-5 rounded-xl border border-slate-700">
+            <h3 class="font-bold text-white mb-3 flex items-center">
+              <i class="fa-solid fa-mobile-screen-button text-emerald-400 mr-2"></i> 기기별 PWA 설치 방법
+            </h3>
+            <div class="mb-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/40 text-sm text-slate-200">
+              <strong class="text-emerald-300">가장 쉬운 방법!</strong> 내 앱 화면 아래의 <strong>[📲 앱으로 설치하기]</strong> 버튼을 누르세요. 버튼이 안 되면 아래 기기별 방법을 따라 하세요.
+            </div>
+            <div class="space-y-3 text-sm text-slate-300">
+              <div class="p-2 bg-slate-800 rounded">
+                <strong class="text-white block"><i class="fa-solid fa-desktop mr-1"></i> PC (Chrome):</strong>
+                주소창 우측의 <strong>[앱 설치 아이콘 <i class="fa-solid fa-download text-emerald-400"></i>]</strong> 클릭
+              </div>
+              <div class="p-2 bg-slate-800 rounded">
+                <strong class="text-white block"><i class="fa-brands fa-android text-emerald-400 mr-1"></i> Android:</strong>
+                Chrome 우측 상단 <strong>⋮ 메뉴</strong> ➔ <strong>"앱 설치"</strong>(또는 "홈 화면에 추가") 클릭
+              </div>
+              <div class="p-2 bg-slate-800 rounded">
+                <strong class="text-white block"><i class="fa-brands fa-apple text-slate-300 mr-1"></i> iOS (Safari):</strong>
+                하단 공유 버튼 ➔ <strong>"홈 화면에 추가"</strong> 클릭
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 bg-emerald-500/10 border border-emerald-500/40 rounded-xl p-4 text-sm text-slate-200"><strong class="block text-emerald-300 mb-2">✅ 확인하기: 마지막 점검 (내 앱이 진짜로 동작하는지)</strong><ul class="list-disc list-inside space-y-1"><li>배포 주소(<code>https://내아이디.github.io/my-memo-pwa/</code>)를 열면 "나만의 한 줄 메모장" 화면이 보인다. (처음엔 1~2분 걸릴 수 있어요)</li><li>메모를 입력하고 [전송] → <strong>✅ 성공적으로 저장되었습니다!</strong>가 뜬다.</li><li>1단계에서 만든 <strong>구글 스프레드시트의 data 시트</strong>에 방금 쓴 메모와 시간이 한 줄 추가되었다.</li><li>컴퓨터(Chrome)나 스마트폰에 <strong>앱으로 설치</strong>해서 아이콘으로 실행된다.</li></ul></div>
+
+        <!-- 심화 검사 가이드 카드 -->
+        <div class="mt-6 bg-slate-900 p-4 rounded-xl border border-slate-700 text-sm">
+          <details><summary class="cursor-pointer font-bold text-blue-400 mb-2">
+            <i class="fa-solid fa-bug mr-2"></i> [심화·선택] Chrome 개발자 도구(F12)로 PWA 상태 검사하기 (눌러서 펼치기)
+          </summary>
+          <p class="text-slate-300 mb-2 leading-relaxed">
+            브라우저에서 <kbd class="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-600">F12</kbd> 키를 눌러 <strong>[Application]</strong> 탭에 들어가면 PWA의 구동 상태를 직접 실시간 점검할 수 있습니다.
+          </p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+            <div class="bg-slate-800/60 p-2 rounded border border-slate-700">
+              <strong class="text-white block mb-1">1. Manifest 탭</strong>
+              앱 이름, start_url, 테마 색상 및 아이콘이 에러 없이 로딩되는지 검사
+            </div>
+            <div class="bg-slate-800/60 p-2 rounded border border-slate-700">
+              <strong class="text-white block mb-1">2. Service Workers 탭</strong>
+              `sw.js` 파일이 Status: <span class="text-emerald-400 font-bold">#activated and is running</span> 상태인지 검사
+            </div>
+            <div class="bg-slate-800/60 p-2 rounded border border-slate-700">
+              <strong class="text-white block mb-1">3. Cache Storage 탭</strong>
+              `memo-pwa-v1` 저장소에 index.html 등의 자원이 캐싱되었는지 검사
+            </div>
+          </div>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬라이드 추가: 기능 추가 시 어떤 파일을 고칠까 -->
+    <div class="slide" id="slide-6">
+      <div class="bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-700 shadow-xl">
+        <div class="inline-block px-3 py-1 bg-purple-500/10 text-purple-400 rounded-full text-sm font-semibold mb-3">
+          Upgrade Guide
+        </div>
+        <h2 class="text-2xl md:text-3xl font-bold text-white mb-2">내 기능을 추가할 때, 어떤 파일을 고쳐야 할까?</h2>
+        <p class="text-slate-300 mb-4 text-sm">바꾸고 싶은 것을 찾아 <strong>색깔 이름표의 파일만</strong> 고치세요. 파일이 어디에 있는지가 중요합니다.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 text-sm">
+          <div class="bg-blue-500/10 border border-blue-500/40 rounded-xl p-3 text-slate-200">
+            <strong class="text-blue-300">GitHub에 있는 파일</strong> (index.html, manifest.json, sw.js, 이미지)<br>
+            고친 뒤 <strong>Commit changes</strong>가 끝! 1~2분 뒤 반영
+          </div>
+          <div class="bg-amber-500/10 border border-amber-500/40 rounded-xl p-3 text-slate-200">
+            <strong class="text-amber-300">Apps Script에 있는 파일</strong> (Code.gs)<br>
+            고친 뒤 <strong>[배포] ➔ [배포 관리] ➔ 새 버전 배포</strong>를 해야 반영
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-700"><h3 class="font-bold text-white mb-1">① 화면 모양·글자·색·버튼 위치·문구 바꾸기</h3><p class="text-slate-400 mb-2">가장 쉬운 경우! 다른 파일은 그대로 두세요.</p><div class="mb-1"><span class="inline-block bg-blue-600 text-white font-bold px-2.5 py-1 rounded-lg mr-1.5 mb-1">index.html</span></div><p class="text-slate-300 leading-relaxed">GitHub에서 파일 수정 ➔ <strong>Commit changes</strong> ➔ 1~2분 뒤 <kbd class="bg-slate-800 px-1 rounded">Ctrl+Shift+R</kbd>로 새로고침</p></div><div class="bg-slate-900 p-4 rounded-xl border border-slate-700"><h3 class="font-bold text-white mb-1">② 저장하는 항목 늘리기 (예: 카테고리, 중요 표시)</h3><p class="text-slate-400 mb-2">입력칸이 늘고 시트 열도 늘어나는 기능</p><div class="mb-1"><span class="inline-block bg-blue-600 text-white font-bold px-2.5 py-1 rounded-lg mr-1.5 mb-1">index.html</span><span class="inline-block bg-amber-600 text-white font-bold px-2.5 py-1 rounded-lg mr-1.5 mb-1">Code.gs (Apps Script)</span></div><p class="text-slate-300 leading-relaxed"><strong>두 곳의 이름을 똑같이</strong> 맞춥니다. index.html이 <code class="text-emerald-300">{ memo, category }</code>로 보내면 GAS도 <code class="text-emerald-300">data.category</code>로 받아야 합니다. GAS를 고친 뒤에는 <strong>[배포] ➔ [배포 관리] ➔ ✏️ ➔ 새 버전 ➔ 배포</strong>(주소는 그대로)</p></div><div class="bg-slate-900 p-4 rounded-xl border border-slate-700"><h3 class="font-bold text-white mb-1">③ 시트에 저장된 메모를 앱 화면에 불러와 보여 주기</h3><p class="text-slate-400 mb-2">목록 보기, 검색, 통계 기능</p><div class="mb-1"><span class="inline-block bg-blue-600 text-white font-bold px-2.5 py-1 rounded-lg mr-1.5 mb-1">index.html</span><span class="inline-block bg-amber-600 text-white font-bold px-2.5 py-1 rounded-lg mr-1.5 mb-1">Code.gs (Apps Script)</span></div><p class="text-slate-300 leading-relaxed">GAS에 <code class="text-emerald-300">doGet</code>이 시트 내용을 JSON으로 돌려주도록 고치고, index.html에서 <code class="text-emerald-300">fetch(GAS_URL)</code>로 받아 화면에 그립니다. GAS는 <strong>새 버전 배포</strong> 필수</p></div><div class="bg-slate-900 p-4 rounded-xl border border-slate-700"><h3 class="font-bold text-white mb-1">④ 앱 이름·아이콘·테마 색 바꾸기</h3><p class="text-slate-400 mb-2">홈 화면 아이콘·앱 이름</p><div class="mb-1"><span class="inline-block bg-purple-600 text-white font-bold px-2.5 py-1 rounded-lg mr-1.5 mb-1">manifest.json</span><span class="inline-block bg-blue-600 text-white font-bold px-2.5 py-1 rounded-lg mr-1.5 mb-1">index.html</span></div><p class="text-slate-300 leading-relaxed"><code class="text-emerald-300">name</code>, <code class="text-emerald-300">short_name</code>, <code class="text-emerald-300">theme_color</code>은 manifest.json에서, 아이콘은 같은 이름의 png 파일을 새로 올려 교체합니다. 이미 설치한 앱은 <strong>삭제 후 다시 설치</strong>해야 바뀐 모습이 보입니다</p></div><div class="bg-slate-900 p-4 rounded-xl border border-slate-700"><h3 class="font-bold text-white mb-1">⑤ 이미지·소리·CSS·JS 같은 새 파일 추가하기</h3><p class="text-slate-400 mb-2">캐릭터 그림, 효과음 등</p><div class="mb-1"><span class="inline-block bg-slate-600 text-white font-bold px-2.5 py-1 rounded-lg mr-1.5 mb-1">새 파일</span><span class="inline-block bg-blue-600 text-white font-bold px-2.5 py-1 rounded-lg mr-1.5 mb-1">index.html</span><span class="inline-block bg-emerald-600 text-white font-bold px-2.5 py-1 rounded-lg mr-1.5 mb-1">sw.js</span></div><p class="text-slate-300 leading-relaxed">파일을 <strong>Upload files</strong>로 올리고 ➔ index.html에서 연결 ➔ 오프라인에서도 쓰려면 sw.js의 <code class="text-emerald-300">ASSETS</code> 목록에 파일 이름을 추가하고 <code class="text-emerald-300">CACHE_NAME</code>을 <code class="text-emerald-300">v2</code>로 올립니다</p></div><div class="bg-slate-900 p-4 rounded-xl border border-slate-700"><h3 class="font-bold text-white mb-1">⑥ 수정했는데 예전 화면이 계속 보일 때</h3><p class="text-slate-400 mb-2">캐시가 원인인 경우</p><div class="mb-1"><span class="inline-block bg-emerald-600 text-white font-bold px-2.5 py-1 rounded-lg mr-1.5 mb-1">sw.js</span></div><p class="text-slate-300 leading-relaxed"><code class="text-emerald-300">CACHE_NAME</code>의 숫자를 올려(v1 ➔ v2) 저장(Commit)하면 옛 캐시가 정리됩니다. 그래도 안 되면 설치한 앱을 지우고 다시 설치</p></div>
+        </div>
+
+        <div class="mt-4 bg-emerald-500/10 border border-emerald-500/40 rounded-xl p-4 text-sm text-slate-200">
+          <strong class="block text-emerald-300 mb-2"><i class="fa-solid fa-robot mr-1"></i> Gem에게 이렇게 요청하면 파일 헷갈림이 줄어요</strong>
+          "지금 내 파일은 아래와 같아. [index.html과 Code.gs 붙여넣기] 여기에 <strong>[추가하고 싶은 기능]</strong>을 넣고 싶어. <strong>먼저 어떤 파일(index.html / Code.gs / manifest.json / sw.js)을 고쳐야 하는지 알려주고</strong>, 고쳐야 하는 파일만 전체 코드로 줘. 나머지 파일은 건드리지 마."
+        </div>
+      </div>
+    </div>
+
+    <!-- 슬라이드 6: 트러블슈팅 & FAQ -->
+    <div class="slide" id="slide-5">
+      <div class="bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-700 shadow-xl">
+        <div class="inline-block px-3 py-1 bg-red-500/10 text-red-400 rounded-full text-sm font-semibold mb-3">
+          Troubleshooting
+        </div>
+        <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">자주 발생하는 오류 & 트러블슈팅</h2>
+        <p class="text-slate-300 mb-6 text-sm">실습 중 문제가 발생하면 아래 사항을 먼저 점검해 보세요.</p>
+
+        <div class="space-y-4">
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+            <h3 class="font-bold text-red-400 text-sm mb-1">Q. 메모를 보냈는데 스프레드시트에 저장되지 않아요!</h3>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              1) GAS 배포 시 <strong>액세스 권한</strong>을 '모든 사용자(Anyone)'로 설정했는지 확인합니다.<br>
+              2) 웹 앱 URL을 브라우저 주소창에 붙여넣어 <strong>OK</strong>가 보이는지 확인합니다. index.html의 <code class="text-emerald-400">GAS_URL</code>이 이 주소와 같은지도 확인하세요.<br>
+              3) GAS 코드를 수정했다면 반드시 <strong>[배포] > [배포 관리] > [수정 아이콘] ➔ 새 버전으로 배포</strong>해야 수정 내용이 반영됩니다.
+            </p>
+          </div>
+
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+            <h3 class="font-bold text-amber-400 text-sm mb-1">Q. 브라우저 콘솔에 CORS 관련 에러가 발생합니다.</h3>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              GAS 웹 앱은 보안상 CORS 구문 제한이 큽니다. JS `fetch` 요청 시 헤더의 `Content-Type`을 
+              <code class="text-emerald-400 bg-slate-800 px-1 py-0.5 rounded">text/plain;charset=utf-8</code> 로 설정했는지 확인하세요 (Simple Request 우회).
+            </p>
+          </div>
+
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+            <h3 class="font-bold text-blue-400 text-sm mb-1">Q. PWA 앱 설치 버튼이 뜨지 않아요.</h3>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              먼저 앱 화면 아래의 <strong>[📲 앱으로 설치하기]</strong> 버튼을 눌러 보세요. 그래도 안 되면 PWA 설치 요건인 <strong>1) HTTPS 프로토콜 (GitHub Pages)</strong>, <strong>2) 유효한 manifest.json</strong>, <strong>3) 등록된 서비스 워커(sw.js)</strong>가 준비되었는지 확인하세요. 개발자 도구(F12) ➔ [Application] 탭에서 상태를 검사할 수 있습니다.
+            </p>
+          </div>
+
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+            <h3 class="font-bold text-red-400 text-sm mb-1">Q. GitHub Pages 주소로 들어갔더니 404(페이지를 찾을 수 없음)가 나와요.</h3>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              1) 설정 후 <strong>1~2분</strong> 기다린 뒤 새로고침합니다.<br>
+              2) 저장소 <strong>Code 탭</strong>에 <code class="text-emerald-400">index.html</code>이 맨 바깥(폴더 안이 아닌 곳)에 있는지, 이름이 정확한지(<code>Index.html</code>, <code>index.html.txt</code> 아님) 확인합니다.<br>
+              3) <strong>Settings ➔ Pages</strong>에서 Branch가 <code class="text-emerald-400">main</code> / <code class="text-emerald-400">/ (root)</code>로 저장되어 있는지, 저장소가 <strong>Public</strong>인지 확인합니다.<br>
+              4) 주소 끝에 저장소 이름이 빠지지 않았는지 확인합니다. (<code>https://아이디.github.io/<strong>my-memo-pwa</strong>/</code>)
+            </p>
+          </div>
+
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+            <h3 class="font-bold text-amber-400 text-sm mb-1">Q. "❌ 저장 실패: Failed to fetch" 또는 "서버 오류"가 떠요.</h3>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              1) index.html의 <code class="text-emerald-400">GAS_URL</code>을 <strong>내 웹 앱 URL</strong>로 바꿨는지 확인합니다. (자리표시자 글자가 그대로면 실패합니다)<br>
+              2) 그 URL을 브라우저 주소창에 붙여넣었을 때 <strong>OK</strong>가 보이는지 확인합니다. 안 보이면 GAS 배포부터 다시 점검합니다.<br>
+              3) 코드를 수정하고 다시 배포했다면 <strong>새 버전으로 배포</strong>했는지 확인합니다.
+            </p>
+          </div>
+
+          <div class="bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/40">
+            <h3 class="font-bold text-emerald-300 text-sm mb-1"><i class="fa-solid fa-robot mr-1"></i> 막히면 나만의 Gem에게 이렇게 물어보세요 (바이브 코딩!)</h3>
+            <ul class="text-sm text-slate-200 leading-relaxed list-disc list-inside space-y-1">
+              <li>"브라우저 콘솔(F12)에 이런 빨간 에러가 떠: [에러 메시지 붙여넣기]. 원인을 쉬운 말로 설명하고 고친 코드를 알려줘."</li>
+              <li>"GitHub Pages 주소가 404야. 내 저장소 파일 목록은 [파일 이름들 적기]인데 뭐가 문제일까?"</li>
+              <li>"아래 GAS 코드를 한 줄씩 쉬운 말로 설명해줘: [코드 붙여넣기]"</li>
+            </ul>
+          </div>
+
+          <div class="bg-blue-500/10 p-4 rounded-xl border border-blue-500/40">
+            <h3 class="font-bold text-blue-300 text-sm mb-1"><i class="fa-solid fa-rocket mr-1"></i> 도전 미션: 내 앱으로 업그레이드하기</h3>
+            <ul class="text-sm text-slate-200 leading-relaxed list-disc list-inside space-y-1">
+              <li>"메모 입력칸 외에 '카테고리' 선택 칸을 추가하고, 스프레드시트에도 같이 저장되게 index.html과 GAS 코드를 고쳐줘."</li>
+              <li>"색상과 앱 이름을 내가 좋아하는 분위기로 바꿔줘. 기능은 그대로 유지해줘."</li>
+              <li>※ GAS 코드를 고치면 <strong>[배포] ➔ [배포 관리] ➔ 새 버전</strong>으로 다시 배포해야 반영됩니다.</li>
+            </ul>
+          </div>
+
+          <!-- 추가 트러블슈팅 질문 -->
+          <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+            <h3 class="font-bold text-purple-400 text-sm mb-1">Q. 코드를 수정했는데 웹 앱 화면에 이전 내용이 그대로 남아있어요!</h3>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              서비스 워커가 기존 파일을 캐시하고 있기 때문입니다(옛 sw.js를 쓰는 경우 특히 그렇습니다). sw.js를 위 최신 코드로 바꾸고 <code class="text-emerald-400">CACHE_NAME</code>을 v2로 올린 뒤, 크롬 브라우저에서 <kbd class="bg-slate-800 px-1 py-0.5 rounded text-slate-200">Ctrl + Shift + R</kbd> (강제 새로고침)을 누르거나, 개발자 도구(F12) ➔ Application 탭 ➔ Service Workers 메뉴에서 <strong class="text-amber-300">Update on reload</strong> 항목을 체크하세요.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- 하단 컨트롤 바 -->
+  <footer class="bg-slate-800/80 backdrop-blur border-t border-slate-700 p-4 sticky bottom-0 z-50">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <button id="prevBtn" onclick="changeSlide(-1)" class="bg-slate-700 hover:bg-slate-600 disabled:opacity-30 disabled:hover:bg-slate-700 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition flex items-center">
+        <i class="fa-solid fa-chevron-left mr-2"></i> 이전 단계
+      </button>
+
+      <span class="text-xs text-slate-400 hidden sm:inline">
+        💡 <strong>Tip:</strong> 키보드 좌/우 방향키로 이동 가능합니다.
+      </span>
+
+      <button id="nextBtn" onclick="changeSlide(1)" class="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 disabled:hover:bg-emerald-600 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition flex items-center">
+        다음 단계 <i class="fa-solid fa-chevron-right ml-2"></i>
+      </button>
+    </div>
+  </footer>
+
+  <!-- 알림 토스트 팝업 -->
+  <div id="toast" class="fixed top-16 right-5 bg-emerald-500 text-slate-950 px-4 py-2.5 rounded-xl shadow-2xl font-bold text-xs transform translate-y-[-100px] opacity-0 transition-all duration-300 flex items-center space-x-2 z-50">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toastMsg">코드가 복사되었습니다!</span>
+  </div>
+
+  <script>
+    let currentSlide = 0;
+    const totalSlides = 7;
+
+    function updateUI() {
+      // 슬라이드 활성화 처리
+      document.querySelectorAll('.slide').forEach((s, idx) => {
+        if (idx === currentSlide) {
+          s.classList.add('active');
+        } else {
+          s.classList.remove('active');
+        }
+      });
+
+      // 프로그레스바 & 카운터
+      const progress = ((currentSlide + 1) / totalSlides) * 100;
+      document.getElementById('progressBar').style.width = `${progress}%`;
+      document.getElementById('slideIndicator').innerText = `${currentSlide + 1} / ${totalSlides}`;
+      document.getElementById('slideSelect').value = currentSlide;
+
+      // 이전/다음 버튼 비활성화 처리
+      document.getElementById('prevBtn').disabled = currentSlide === 0;
+      document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+    }
+
+    function changeSlide(direction) {
+      currentSlide += direction;
+      if (currentSlide < 0) currentSlide = 0;
+      if (currentSlide >= totalSlides) currentSlide = totalSlides - 1;
+      updateUI();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function goToSlide(index) {
+      currentSlide = index;
+      updateUI();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 탭 전환 함수 (Step 2 슬라이드)
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('border-b-2', 'border-blue-400', 'text-blue-400');
+        btn.classList.add('text-slate-400');
+      });
+
+      document.getElementById(tabId).classList.remove('hidden');
+
+      const activeBtn = document.getElementById(`btn-${tabId}`);
+      activeBtn.classList.add('border-b-2', 'border-blue-400', 'text-blue-400');
+      activeBtn.classList.remove('text-slate-400');
+    }
+
+    // 코드 클립보드 복사 함수
+    function copyCode(elementId) {
+      const codeText = document.getElementById(elementId).innerText;
+      const textArea = document.createElement('textarea');
+      textArea.value = codeText;
+      document.body.appendChild(textArea);
+      textArea.select();
+      
+      try {
+        document.execCommand('copy');
+        showToast('코드가 클립보드에 복사되었습니다! 📋');
+      } catch (err) {
+        showToast('복사 실패! 직접 선택해서 복사해 주세요.');
+      }
+      
+      document.body.removeChild(textArea);
+    }
+
+    // 토스트 메세지 출력
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      toastMsg.innerText = message;
+      
+      toast.classList.remove('translate-y-[-100px]', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-[-100px]', 'opacity-0');
+      }, 2500);
+    }
+
+    // 키보드 좌우 방향키로 슬라이드 이동
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') changeSlide(1);
+      if (e.key === 'ArrowLeft') changeSlide(-1);
+    });
+
+    // 라이트/다크 모드 전환 (선택은 이 브라우저에 기억)
+    function applyTheme(t, save) {
+      document.documentElement.setAttribute('data-theme', t);
+      const isDark = t === 'dark';
+      // 다크일 때는 '라이트로 바꾸기', 라이트일 때는 '다크로 바꾸기' 버튼을 보여 줌
+      document.getElementById('themeIcon').className = 'mr-1.5 fa-solid ' + (isDark ? 'fa-sun' : 'fa-moon');
+      document.getElementById('themeLabel').innerText = isDark ? '라이트' : '다크';
+      if (save) { try { localStorage.setItem('pwaGuideTheme', t); } catch (e) {} }
+    }
+
+    function toggleTheme() {
+      const now = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+      applyTheme(now === 'dark' ? 'light' : 'dark', true);
+    }
+
+    // 글자 크기 조절 (전체 글자 크기를 퍼센트로 변경, 선택값은 이 브라우저에 기억)
+    const FONT_LEVELS = [100, 115, 130, 150, 175];
+    let fontIdx = 1;
+    try {
+      const saved = parseInt(localStorage.getItem('pwaGuideFont'), 10);
+      if (!isNaN(saved) && saved >= 0 && saved < FONT_LEVELS.length) fontIdx = saved;
+    } catch (e) {}
+
+    function applyFont() {
+      document.documentElement.style.fontSize = FONT_LEVELS[fontIdx] + '%';
+      document.getElementById('fontLabel').innerText = FONT_LEVELS[fontIdx] + '%';
+      document.getElementById('fontDown').disabled = fontIdx === 0;
+      document.getElementById('fontUp').disabled = fontIdx === FONT_LEVELS.length - 1;
+      try { localStorage.setItem('pwaGuideFont', fontIdx); } catch (e) {}
+    }
+
+    function changeFont(d) {
+      fontIdx = Math.max(0, Math.min(FONT_LEVELS.length - 1, fontIdx + d));
+      applyFont();
+    }
+
+    // 초기화
+    applyTheme(document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
+    applyFont();
+    updateUI();
+  </script>
+</body>
+</html>

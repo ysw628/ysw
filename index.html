@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>한 줄 메모장</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4CAF50">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 400px; margin: 0 auto; }
+    .input-group { display: flex; gap: 8px; margin-top: 15px; }
+    input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+    button { padding: 10px 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:disabled { background-color: #ccc; }
+    #status { margin-top: 10px; font-size: 13px; color: #666; }
+    #installBox { margin-top: 20px; padding: 14px; background: #e8f5e9; border-radius: 8px; display: none; }
+    #installBtn { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; }
+    #installHelp { margin: 10px 0 0; font-size: 13px; color: #2e5d31; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <h3>📝 나만의 한 줄 메모장 (PWA)</h3>
+  <div class="input-group">
+    <input type="text" id="memoInput" placeholder="메모할 내용을 입력하세요">
+    <button id="sendBtn" onclick="sendMemo()">전송</button>
+  </div>
+  <div id="status"></div>
+
+  <!-- 앱 설치 안내: 주소창을 못 찾는 학생을 위해 화면 안에 설치 버튼을 둡니다 -->
+  <div id="installBox">
+    <button id="installBtn">📲 앱으로 설치하기</button>
+    <p id="installHelp"></p>
+  </div>
+
+  <script>
+    // 1. 서비스 워커 등록
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log('Service Worker Registered'));
+    }
+
+    // 설치 버튼 (PWA 설치를 화면 안에서 바로 할 수 있게 해 줍니다)
+    let deferredPrompt = null;
+    const installBox = document.getElementById('installBox');
+    const installBtn = document.getElementById('installBtn');
+    const installHelp = document.getElementById('installHelp');
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+    // 이미 앱으로 실행 중이면 설치 버튼을 보여 주지 않음
+    if (!isStandalone) installBox.style.display = 'block';
+
+    // 크롬/엣지/안드로이드: 설치 준비가 되면 브라우저가 이 이벤트를 보내 줌
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    window.addEventListener('appinstalled', () => {
+      installBox.style.display = 'none';
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        // 설치 팝업을 바로 띄움
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+      } else if (isIOS) {
+        installHelp.innerText = '아이폰/아이패드는 Safari에서 아래 가운데 [공유(□↑)] 버튼 ➔ [홈 화면에 추가]를 눌러 주세요. (카카오톡 등 앱 안의 브라우저에서는 안 됩니다)';
+      } else {
+        installHelp.innerText = '크롬 주소창 오른쪽의 설치 아이콘(⊕) 또는 오른쪽 위 ⋮ 메뉴 ➔ [앱 설치] / [홈 화면에 추가]를 눌러 주세요. 이미 설치했다면 앱 목록에서 실행하세요.';
+      }
+    });
+
+    // 2. 구글 앱 스크립트 웹 앱 URL 붙여넣기
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzKTJial1osGY3Bch54Yz_-fJImCRY4Bd_OTigt-AHx2HF4bwzsl4X4JofrVKqJTNE/exec";
+
+    async function sendMemo() {
+      const input = document.getElementById('memoInput');
+      const btn = document.getElementById('sendBtn');
+      const status = document.getElementById('status');
+      const text = input.value.trim();
+
+      if (!text) return alert('내용을 입력하세요.');
+
+      btn.disabled = true;
+      status.innerText = '저장 중...';
+
+      try {
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ memo: text })
+        });
+
+        // 서버(GAS)가 돌려준 결과를 확인해서 실패하면 오류로 처리
+        const result = await res.json();
+        if (result.result !== 'success') {
+          throw new Error(result.message || '서버 오류');
+        }
+
+        input.value = '';
+        status.innerText = '✅ 성공적으로 저장되었습니다!';
+        setTimeout(() => { status.innerText = ''; }, 2000);
+      } catch (err) {
+        status.innerText = '❌ 저장 실패: ' + err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
